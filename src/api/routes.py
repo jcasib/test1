@@ -67,6 +67,18 @@ def get_me():
     return jsonify(user.serialize()), 200
 
 
+# ── Users ─────────────────────────────────────────────────────────────────────
+
+@api.route('/users/search', methods=['GET'])
+@jwt_required()
+def search_users():
+    q = request.args.get("q", "").strip()
+    if not q or len(q) < 2:
+        return jsonify([]), 200
+    users = User.query.filter(User.username.ilike(f"%{q}%")).limit(10).all()
+    return jsonify([u.serialize() for u in users]), 200
+
+
 # ── Groups ────────────────────────────────────────────────────────────────────
 
 @api.route('/groups', methods=['GET'])
@@ -428,20 +440,7 @@ MOCK_TM = [
      "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400",
      "url": "#", "price_range": "Gratis", "source": "ticketmaster"},
 ]
-MOCK_EB = [
-    {"id": "EB001", "name": "Networking Emprendedores", "date": "2026-06-25", "time": "18:00",
-     "venue": "Espacio Cowork", "category": "Negocio",
-     "image": "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400",
-     "url": "#", "price_range": "Gratis", "source": "eventbrite"},
-    {"id": "EB002", "name": "Taller Cocina Japonesa", "date": "2026-07-05", "time": "11:00",
-     "venue": "Kitchen Club", "category": "Gastronomía",
-     "image": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400",
-     "url": "#", "price_range": "35€", "source": "eventbrite"},
-    {"id": "EB003", "name": "Sunset Party Rooftop", "date": "2026-07-12", "time": "20:00",
-     "venue": "Rooftop Bar Central", "category": "Fiesta",
-     "image": "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400",
-     "url": "#", "price_range": "10€-20€", "source": "eventbrite"},
-]
+
 
 
 @api.route('/events/ticketmaster', methods=['GET'])
@@ -471,36 +470,6 @@ def search_ticketmaster():
                 "url": e.get("url"),
                 "price_range": f"{prices[0].get('min','?')}€-{prices[0].get('max','?')}€" if prices else "Ver web",
                 "source": "ticketmaster",
-            })
-        return jsonify({"events": events}), 200
-    except Exception as ex:
-        raise APIException(str(ex), 500)
-
-
-@api.route('/events/eventbrite', methods=['GET'])
-@jwt_required()
-def search_eventbrite():
-    city  = request.args.get("city", "Madrid")
-    token = os.getenv("EVENTBRITE_TOKEN", "")
-    if not token or token == "YOUR_TOKEN_HERE":
-        return jsonify({"mock": True, "events": [{**e, "city": city} for e in MOCK_EB]}), 200
-    try:
-        import requests as req
-        r = req.get("https://www.eventbriteapi.com/v3/events/search/",
-                    headers={"Authorization": f"Bearer {token}"},
-                    params={"location.address": city, "expand": "venue"}, timeout=10)
-        data   = r.json()
-        events = []
-        for e in data.get("events", []):
-            venue = e.get("venue", {})
-            start = e.get("start", {}).get("local", "")
-            events.append({
-                "id": e.get("id"), "name": e.get("name", {}).get("text", ""),
-                "date": start[:10] if start else None,
-                "time": start[11:16] if len(start) > 11 else None,
-                "venue": venue.get("name"), "city": venue.get("address", {}).get("city"),
-                "category": "Evento", "image": "",
-                "url": e.get("url"), "price_range": "Ver web", "source": "eventbrite",
             })
         return jsonify({"events": events}), 200
     except Exception as ex:

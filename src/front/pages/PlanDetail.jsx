@@ -78,7 +78,7 @@ export function PlanDetail() {
             {/* Header */}
             <div className="page-header">
                 <div className="container">
-                    <button onClick={() => navigate(-1)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", padding: "8px 16px", borderRadius: "100px", cursor: "pointer", fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: "0.82rem", marginBottom: "16px" }}>← Volver</button>
+                    <button onClick={() => navigate("/dashboard")} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", padding: "8px 16px", borderRadius: "100px", cursor: "pointer", fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: "0.82rem", marginBottom: "16px" }}>← Volver</button>
                     <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
                         <div>
                             <span className="chip" style={{ background: "rgba(255,255,255,0.2)", color: "white", marginBottom: "10px", display: "inline-block" }}>{plan.status.toUpperCase()}</span>

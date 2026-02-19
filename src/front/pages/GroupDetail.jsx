@@ -29,12 +29,22 @@ export function GroupDetail() {
         setLoading(false);
     };
 
-    const invite = async (e) => {
-        e.preventDefault();
+    const [searchResults, setSearchResults] = useState([]);
+
+    const searchUsers = async (q) => {
+        setInviteUsername(q);
+        if (q.length < 2) { setSearchResults([]); return; }
         try {
-            await api(store.token, "POST", `/groups/${groupId}/invite`, { username: inviteUsername });
-            setInviteUsername(""); setShowInvite(false);
-            dispatch({ type: "set_toast", payload: `¡${inviteUsername} añadido al grupo!` });
+            const results = await api(store.token, "GET", `/users/search?q=${encodeURIComponent(q)}`);
+            setSearchResults(results.filter(u => !group.members.find(m => m.id === u.id)));
+        } catch (e) { setSearchResults([]); }
+    };
+
+    const inviteUser = async (username) => {
+        try {
+            await api(store.token, "POST", `/groups/${groupId}/invite`, { username });
+            setInviteUsername(""); setSearchResults([]); setShowInvite(false);
+            dispatch({ type: "set_toast", payload: `¡${username} añadido al grupo!` });
             loadData();
         } catch (err) { alert(err.message); }
     };
@@ -83,13 +93,27 @@ export function GroupDetail() {
                         </div>
                     )}
 
-                    {/* Invite form */}
+                    {/* Invite form with live search */}
                     {showInvite && (
-                        <form onSubmit={invite} style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
-                            <input className="form-input" placeholder="Nombre de usuario" value={inviteUsername}
-                                onChange={e => setInviteUsername(e.target.value)} style={{ flex: 1 }} required />
-                            <button type="submit" className="btn btn-primary">Invitar</button>
-                        </form>
+                        <div style={{ marginTop: "16px" }}>
+                            <input className="form-input" placeholder="Buscar usuario..." value={inviteUsername}
+                                onChange={e => searchUsers(e.target.value)}
+                                style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "white" }} />
+                            {searchResults.length > 0 && (
+                                <div style={{ background: "white", borderRadius: "var(--radius)", marginTop: "4px", overflow: "hidden", boxShadow: "var(--shadow-lg)" }}>
+                                    {searchResults.map(u => (
+                                        <button key={u.id} type="button"
+                                            onClick={() => inviteUser(u.username)}
+                                            style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid var(--cream-dark)", textAlign: "left" }}
+                                            onMouseEnter={e => e.currentTarget.style.background = "var(--cream)"}
+                                            onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                                            <div className="avatar avatar-sm" style={{ background: u.avatar_color }}>{u.avatar_initial}</div>
+                                            <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 700 }}>{u.username}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {/* Members */}

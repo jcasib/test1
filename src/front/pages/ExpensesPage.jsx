@@ -25,7 +25,7 @@ export function ExpensesPage() {
                 api(store.token, "GET", `/plans/${planId}/expenses/summary`),
             ]);
             setPlan(p); setExpenses(exp); setSummary(sum);
-        } catch (e) { navigate(-1); }
+        } catch (e) { navigate("/dashboard"); }
         setLoading(false);
     };
 
